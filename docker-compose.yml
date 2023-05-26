@@ -1,0 +1,39 @@
+version: "3"
+
+services:
+  api:
+    container_name: api-template
+    build:
+      context: .
+      dockerfile: Dockerfile.base
+    restart: on-failure
+    volumes:
+      - ./:/webapps
+      - ./log/:/var/log/apps
+    ports:
+      - 5002:5002
+    environment:
+      - PYTHONUNBUFFERED=true
+    env_file:
+      - .env
+    command: uwsgi -psgi /etc/uwsgi/uwsgi.ini --enable-threads
+
+  celery:
+    container_name: api-template-celery
+    build:
+      context: .
+      dockerfile: Dockerfile.base
+    restart: on-failure
+    volumes:
+      - ./:/webapps
+      - ./log/:/var/log/apps
+    environment:
+      - PYTHONUNBUFFERED=true
+    env_file:
+      - .env
+    command: celery -A manage.celery_app worker -l INFO -c 2 -n celery@%%h --queues=celery -E
+
+networks:
+  default:
+    name: same-network
+    external: true
